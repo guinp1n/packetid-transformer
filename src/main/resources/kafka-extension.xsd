@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema elementFormDefault="qualified"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <!-- Kafka Configuration -->
+    <xs:element name="kafka-configuration" type="kafka-configurationType">
+        <xs:key name="kafka-cluster-id">
+            <xs:selector xpath="kafka-clusters/kafka-cluster"/>
+            <xs:field xpath="id"/>
+        </xs:key>
+        <xs:key name="mqtt-to-kafka-mapping-id">
+            <xs:selector xpath="mqtt-to-kafka-mappings/mqtt-to-kafka-mapping"/>
+            <xs:field xpath="id"/>
+        </xs:key>
+        <xs:key name="mqtt-to-kafka-transformer-id">
+            <xs:selector xpath="mqtt-to-kafka-transformers/mqtt-to-kafka-transformer"/>
+            <xs:field xpath="id"/>
+        </xs:key>
+        <xs:key name="kafka-to-mqtt-mapping-id">
+            <xs:selector xpath="kafka-to-mqtt-mappings/kafka-to-mqtt-mapping"/>
+            <xs:field xpath="id"/>
+        </xs:key>
+        <xs:key name="kafka-to-mqtt-transformer-id">
+            <xs:selector xpath="kafka-to-mqtt-transformers/kafka-to-mqtt-transformer"/>
+            <xs:field xpath="id"/>
+        </xs:key>
+        <xs:keyref name="mqtt-to-kafka-mapping-cluster-id-ref" refer="kafka-cluster-id">
+            <xs:selector xpath="mqtt-to-kafka-mappings/mqtt-to-kafka-mapping"/>
+            <xs:field xpath="cluster-id"/>
+        </xs:keyref>
+        <xs:keyref name="mqtt-to-kafka-transformer-cluster-id-ref" refer="kafka-cluster-id">
+            <xs:selector xpath="mqtt-to-kafka-transformers/mqtt-to-kafka-transformer"/>
+            <xs:field xpath="cluster-id"/>
+        </xs:keyref>
+        <xs:keyref name="kafka-to-mqtt-mapping-cluster-id-ref" refer="kafka-cluster-id">
+            <xs:selector xpath="kafka-to-mqtt-mappings/kafka-to-mqtt-mapping"/>
+            <xs:field xpath="cluster-id"/>
+        </xs:keyref>
+        <xs:keyref name="kafka-to-mqtt-transformer-cluster-id-ref" refer="kafka-cluster-id">
+            <xs:selector xpath="kafka-to-mqtt-transformers/kafka-to-mqtt-transformer"/>
+            <xs:field xpath="cluster-id"/>
+        </xs:keyref>
+    </xs:element>
+    <xs:complexType name="kafka-configurationType">
+        <xs:all>
+            <xs:element name="kafka-clusters" type="kafka-clustersType"/>
+            <xs:element name="mqtt-to-kafka-mappings" type="mqtt-to-kafka-mappingsType" minOccurs="0"/>
+            <xs:element name="mqtt-to-kafka-transformers" type="mqtt-to-kafka-transformersType" minOccurs="0"/>
+            <xs:element name="kafka-to-mqtt-mappings" type="kafka-to-mqtt-mappingsType" minOccurs="0"/>
+            <xs:element name="kafka-to-mqtt-transformers" type="kafka-to-mqtt-transformersType" minOccurs="0"/>
+            <xs:element name="schema-registries" type="schema-registriesType" minOccurs="0"/>
+            <xs:element name="internal" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="option" type="InternalOptionEntity" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Internal Configurations -->
+    <xs:complexType name="InternalOptionEntity">
+        <xs:all>
+            <xs:element name="key" type="xs:string"/>
+            <xs:element name="value" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Kafka Clusters -->
+    <xs:complexType name="kafka-clustersType">
+        <xs:sequence>
+            <xs:element name="kafka-cluster" type="kafka-clusterType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="kafka-clusterType">
+        <xs:all>
+            <xs:element name="id" type="lowercaseId"/>
+            <xs:element name="bootstrap-servers" type="xs:string"/>
+            <xs:element name="tls" type="tlsType" minOccurs="0"/>
+            <xs:element name="authentication" type="authenticationType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- TLS -->
+    <xs:complexType name="tlsType">
+        <xs:all>
+            <xs:element name="enabled" type="xs:boolean"/>
+            <xs:element name="keystore" type="keystoreType" minOccurs="0"/>
+            <xs:element name="truststore" type="truststoreType" minOccurs="0"/>
+            <xs:element name="cipher-suites" type="cipher-suitesType" minOccurs="0"/>
+            <xs:element name="protocols" type="protocolsType" minOccurs="0"/>
+            <xs:element name="hostname-verification" type="xs:boolean" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="keystoreType">
+        <xs:all>
+            <xs:element name="path" type="xs:string"/>
+            <xs:element name="password" type="xs:string"/>
+            <xs:element name="private-key-password" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="truststoreType">
+        <xs:all>
+            <xs:element name="path" type="xs:string"/>
+            <xs:element name="password" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="cipher-suitesType">
+        <xs:sequence>
+            <xs:element name="cipher-suite" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="protocolsType">
+        <xs:sequence>
+            <xs:element name="protocol" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Authentication -->
+    <xs:complexType name="authenticationType">
+        <xs:group ref="authenticationTypeGroup"/>
+    </xs:complexType>
+    <xs:group name="authenticationTypeGroup">
+        <xs:choice>
+            <xs:sequence>
+                <xs:element name="none" type="xs:string"/>
+            </xs:sequence>
+            <xs:sequence>
+                <xs:element name="plain" type="plainType"/>
+            </xs:sequence>
+            <xs:sequence>
+                <xs:element name="scram-sha256" type="scram-sha256Type"/>
+            </xs:sequence>
+            <xs:sequence>
+                <xs:element name="scram-sha512" type="scram-sha512Type"/>
+            </xs:sequence>
+            <xs:sequence>
+                <xs:element name="gssapi" type="gssapiType"/>
+            </xs:sequence>
+            <xs:sequence>
+                <xs:element name="microsoft-entra-id" type="xs:string"/>
+            </xs:sequence>
+        </xs:choice>
+    </xs:group>
+    <xs:complexType name="plainType">
+        <xs:all>
+            <xs:element name="username" type="xs:string"/>
+            <xs:element name="password" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="scram-sha256Type">
+        <xs:all>
+            <xs:element name="username" type="xs:string"/>
+            <xs:element name="password" type="xs:string"/>
+            <xs:element name="token-auth" type="xs:boolean" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="scram-sha512Type">
+        <xs:all>
+            <xs:element name="username" type="xs:string"/>
+            <xs:element name="password" type="xs:string"/>
+            <xs:element name="token-auth" type="xs:boolean" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="gssapiType">
+        <xs:all>
+            <xs:element name="use-key-tab" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="store-key" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="key-tab-file" type="xs:string" minOccurs="0"/>
+            <xs:element name="principal" type="xs:string" minOccurs="0"/>
+            <xs:element name="use-ticket-cache" type="xs:boolean" minOccurs="0"/>
+            <xs:element name="kerberos-service-name" type="xs:string" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- MQTT to Kafka Mappings -->
+    <xs:complexType name="mqtt-to-kafka-mappingsType">
+        <xs:sequence>
+            <xs:element name="mqtt-to-kafka-mapping" type="mqtt-to-kafka-mappingType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="mqtt-to-kafka-mappingType">
+        <xs:all>
+            <xs:element name="id" type="lowercaseId"/>
+            <xs:element name="cluster-id" type="xs:string"/>
+            <xs:element name="mqtt-topic-filters" type="mqtt-topic-filtersType"/>
+            <xs:element name="kafka-topic" type="xs:string"/>
+            <xs:element name="kafka-acks" type="kafkaAcksType" minOccurs="0"/>
+            <xs:element name="kafka-max-request-size-bytes" minOccurs="0">
+                <xs:simpleType>
+                    <xs:union memberTypes="xs:positiveInteger pathPatternType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="tracing" type="mqtt-to-kafka-tracingType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="mqtt-topic-filtersType">
+        <xs:sequence>
+            <xs:element name="mqtt-topic-filter" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="kafkaAcksType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ZERO"/>
+            <xs:enumeration value="ONE"/>
+            <xs:enumeration value="ALL"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- MQTT to Kafka Transformers -->
+    <xs:complexType name="mqtt-to-kafka-transformersType">
+        <xs:sequence>
+            <xs:element name="mqtt-to-kafka-transformer" type="mqtt-to-kafka-transformerType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="mqtt-to-kafka-transformerType">
+        <xs:all>
+            <xs:element name="id" type="lowercaseId"/>
+            <xs:element name="cluster-id" type="xs:string"/>
+            <xs:element name="mqtt-topic-filters" type="mqtt-topic-filtersType"/>
+            <xs:element name="transformer" type="xs:string"/>
+            <xs:element name="kafka-acks" type="kafkaAcksType" minOccurs="0"/>
+            <xs:element name="kafka-max-request-size-bytes" minOccurs="0">
+                <xs:simpleType>
+                    <xs:union memberTypes="xs:positiveInteger pathPatternType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="tracing" type="mqtt-to-kafka-tracingType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- MQTT to Kafka Tracing -->
+    <xs:complexType name="mqtt-to-kafka-tracingType">
+        <xs:all>
+            <xs:element name="outbound-context-propagation" type="outboundContextPropagationType"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="outboundContextPropagationType">
+        <xs:all>
+            <xs:element name="enabled" type="xs:boolean"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Kafka to MQTT Mappings -->
+    <xs:complexType name="kafka-to-mqtt-mappingsType">
+        <xs:sequence>
+            <xs:element name="kafka-to-mqtt-mapping" type="kafka-to-mqtt-mappingType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="kafka-to-mqtt-mappingType">
+        <xs:all>
+            <xs:element name="id" type="lowercaseId"/>
+            <xs:element name="cluster-id" type="xs:string"/>
+            <xs:element name="use-schema-registry" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="none"/>
+                        <xs:enumeration value="local"/>
+                        <xs:enumeration value="confluent"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="kafka-topics" type="kafka-topicsType"/>
+            <xs:element name="mqtt-topics" type="mqtt-topicsType" minOccurs="0"/>
+            <xs:element name="mqtt-payload" type="xs:string" minOccurs="0"/>
+            <xs:element name="mqtt-publish-fields" type="mqtt-publish-fieldsType" minOccurs="0"/>
+            <xs:element name="tracing" type="kafka-to-mqtt-tracingType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="kafka-topicsType">
+        <xs:sequence>
+            <xs:element name="kafka-topic" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="kafka-topic-pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="mqtt-topicsType">
+        <xs:sequence>
+            <xs:element name="mqtt-topic" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="mqtt-publish-fieldsType">
+        <xs:all>
+            <xs:element name="retained-flag" minOccurs="0">
+                <xs:simpleType>
+                    <xs:union memberTypes="xs:boolean pathPatternType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="payload-format-indicator" minOccurs="0">
+                <xs:simpleType>
+                    <xs:union memberTypes="payload-format-indicatorType pathPatternType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="message-expiry-interval" minOccurs="0">
+                <xs:simpleType>
+                    <xs:union memberTypes="xs:long pathPatternType"/>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="response-topic" type="xs:string" minOccurs="0"/>
+            <xs:element name="correlation-data" type="xs:string" minOccurs="0"/>
+            <xs:element name="user-properties" type="user-propertiesType" minOccurs="0"/>
+            <xs:element name="content-type" type="xs:string" minOccurs="0"/>
+            <xs:element name="qos" minOccurs="0">
+                <xs:simpleType>
+                    <xs:union memberTypes="qosType pathPatternType"/>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:simpleType name="payload-format-indicatorType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="UTF-8"/>
+            <xs:enumeration value="UNSPECIFIED"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="user-propertiesType">
+        <xs:sequence>
+            <xs:element name="user-property" type="user-propertyType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="user-propertyType">
+        <xs:sequence>
+            <xs:element name="key" type="xs:string"/>
+            <xs:element name="value" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="qosType">
+        <xs:restriction base="xs:int">
+            <xs:enumeration value="0"/>
+            <xs:enumeration value="1"/>
+            <xs:enumeration value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Kafka to MQTT Transformers -->
+    <xs:complexType name="kafka-to-mqtt-transformersType">
+        <xs:sequence>
+            <xs:element name="kafka-to-mqtt-transformer" type="kafka-to-mqtt-transformerType" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="kafka-to-mqtt-transformerType">
+        <xs:all>
+            <xs:element name="id" type="lowercaseId"/>
+            <xs:element name="cluster-id" type="xs:string"/>
+            <xs:element name="transformer" type="xs:string"/>
+            <xs:element name="kafka-topics" type="kafka-topicsType"/>
+            <xs:element name="tracing" type="kafka-to-mqtt-tracingType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Kafka to MQTT Tracing -->
+    <xs:complexType name="kafka-to-mqtt-tracingType">
+        <xs:all>
+            <xs:element name="sampling" type="samplingType"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="samplingType">
+        <xs:all>
+            <xs:element name="enabled" type="xs:boolean"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Schema Registries -->
+    <xs:complexType name="schema-registriesType">
+        <xs:sequence>
+            <xs:element name="local-schema-registry" type="local-schema-registryType" minOccurs="0"/>
+            <xs:element name="confluent-schema-registry" type="confluent-schema-registryType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Local Schema Registry -->
+    <xs:complexType name="local-schema-registryType">
+        <xs:all>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="avro-schema-entries" type="avro-schema-entriesType" minOccurs="0"/>
+            <xs:element name="json-schema-entries" type="json-schema-entriesType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="avro-schema-entriesType">
+        <xs:sequence>
+            <xs:element name="avro-schema-entry" type="avro-schema-entryType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="avro-schema-entryType">
+        <xs:all>
+            <xs:element name="kafka-topics" type="kafka-topicsType"/>
+            <xs:element name="avro-file" type="xs:string"/>
+            <xs:element name="serialization" minOccurs="0">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="binary"/>
+                        <xs:enumeration value="json"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="json-schema-entriesType">
+        <xs:sequence>
+            <xs:element name="json-schema-entry" type="json-schema-entryType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="json-schema-entryType">
+        <xs:all>
+            <xs:element name="kafka-topics" type="kafka-topicsType"/>
+            <xs:element name="json-file" type="xs:string"/>
+        </xs:all>
+    </xs:complexType>
+
+    <!-- Confluent Schema Registry -->
+    <xs:complexType name="confluent-schema-registryType">
+        <xs:all>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="url" type="xs:string"/>
+            <xs:element name="kafka-topics" type="kafka-topicsType"/>
+            <xs:element name="tls" type="tlsConfluentType" minOccurs="0"/>
+            <xs:element name="authentication" type="confluentSchemaRegistryAuthenticationType" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="tlsConfluentType">
+        <xs:all>
+            <xs:element name="keystore" type="keystoreType" minOccurs="0"/>
+            <xs:element name="truststore" type="truststoreType" minOccurs="0"/>
+            <xs:element name="cipher-suites" type="cipher-suitesType" minOccurs="0"/>
+            <xs:element name="protocols" type="protocolsType" minOccurs="0"/>
+            <xs:element name="hostname-verification" type="xs:boolean" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="confluentSchemaRegistryAuthenticationType">
+        <xs:choice>
+            <xs:element name="plain" type="plainType"/>
+            <xs:element name="token" type="xs:string"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:simpleType name="lowercaseId">
+        <xs:restriction base="xs:ID">
+            <xs:pattern value="[a-z0-9_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="pathPatternType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value=".*\$\{//[a-zA-Z0-9\[\]\-_/]+\}.*"/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>
